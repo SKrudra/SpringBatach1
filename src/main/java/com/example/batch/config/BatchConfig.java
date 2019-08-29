@@ -1,4 +1,4 @@
-package com.example.batch;
+package com.example.batch.config;
 
 import javax.sql.DataSource;
 
@@ -22,6 +22,8 @@ import org.springframework.core.io.ClassPathResource;
 import com.example.batch.beans.Person;
 import com.example.batch.listeners.JobCompletionNotificationListener;
 import com.example.batch.processors.PersonItemProcessor;
+import com.example.batch.tasks.MyTaskOne;
+import com.example.batch.tasks.MyTaskTwo;
 
 @Configuration
 @EnableBatchProcessing
