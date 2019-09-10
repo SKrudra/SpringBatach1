@@ -31,6 +31,7 @@ import com.example.batch.beans.Person;
 import com.example.batch.beans.Website;
 import com.example.batch.listeners.JobCompletionNotificationListener;
 import com.example.batch.processors.PersonItemProcessor;
+import com.example.batch.processors.WebsiteItemProcessor;
 import com.example.batch.tasks.MyTaskOne;
 import com.example.batch.tasks.MyTaskTwo;
 
@@ -125,6 +126,11 @@ public class BatchConfig {
 	}
 
 	@Bean
+	public WebsiteItemProcessor websiteProcessor() {
+		return new WebsiteItemProcessor();
+	}
+
+	@Bean
 	public FlatFileItemWriter<Website> csvWriter() {
 		return new FlatFileItemWriterBuilder<Website>().name("websiteItemWriter")
 				.resource(new ClassPathResource("output/web.csv")).append(true)
@@ -149,7 +155,7 @@ public class BatchConfig {
 	@Bean
 	public Step multiInputReaderStep() {
 		return stepBuilderFactory.get("multiInputReaderStep").<Website, Website>chunk(10)
-				.reader(multiResourceItemReader()).writer(csvWriter()).build();
+				.reader(multiResourceItemReader()).processor(websiteProcessor()).writer(csvWriter()).build();
 	}
 	/* Reading input for multiple resources(CSVs) Job ends */
 }
