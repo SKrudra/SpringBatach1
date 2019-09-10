@@ -2,6 +2,7 @@ package com.example.batch.config;
 
 import javax.sql.DataSource;
 
+import com.example.batch.beans.Website;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -12,9 +13,19 @@ import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourc
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileItemWriter;
+import org.springframework.batch.item.file.MultiResourceItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
+import org.springframework.batch.item.file.builder.MultiResourceItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
+import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
+import org.springframework.batch.item.file.transform.FieldSet;
+import org.springframework.batch.item.file.transform.LineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -24,6 +35,7 @@ import com.example.batch.listeners.JobCompletionNotificationListener;
 import com.example.batch.processors.PersonItemProcessor;
 import com.example.batch.tasks.MyTaskOne;
 import com.example.batch.tasks.MyTaskTwo;
+import org.springframework.core.io.Resource;
 
 @Configuration
 @EnableBatchProcessing
@@ -34,6 +46,9 @@ public class BatchConfig {
 
 	@Autowired
 	private StepBuilderFactory stepBuilderFactory;
+
+	@Value("input/data-*.csv")
+	private Resource[] resources;
 
 	// demo empty job begins
 	@Bean
@@ -95,4 +110,54 @@ public class BatchConfig {
 	}
 	// end::jobstep[]
 
+	// multiple inputs
+	@Bean
+	public FlatFileItemReader<Website> csvReader(){
+		return new FlatFileItemReaderBuilder<Website>().name("websiteItemReader")
+				.delimited()
+				.names(new String[] { "firstName", "lastName" })
+				.fieldSetMapper(new BeanWrapperFieldSetMapper<Website>() {
+					{
+						setTargetType(Website.class);
+					}
+				}).build();
+	}
+
+	@Bean
+	public MultiResourceItemReader<Website> multiResourceItemReader(){
+		return new MultiResourceItemReaderBuilder<Website>().name("multiResourceItemReader").resources(resources).delegate(csvReader()).build();
+	}
+
+	@Bean
+	public FlatFileItemWriter<Website> csvWriter(){
+		return new FlatFileItemWriterBuilder<Website>().name("websiteItemWriter")
+				.resource(new ClassPathResource("output/web.csv"))
+				.append(true).lineAggregator( new DelimitedLineAggregator<Website>(){
+					{
+						setDelimiter(",");
+						setFieldExtractor(new BeanWrapperFieldExtractor<Website>(){
+							{
+								setNames(new String[] {"id", "url"});
+							}
+						});
+					}
+				}).build();
+	}
+
+	@Bean
+	public Job multiInputReaderJob(){
+		return jobBuilderFactory.get("multiInputReaderJob")
+				.incrementer(new RunIdIncrementer())
+				.flow(multiInputReaderStep())
+				.end()
+				.build();
+	}
+
+	@Bean
+	public Step multiInputReaderStep() {
+		return stepBuilderFactory.get("multiInputReaderStep").<Website, Website> chunk(10)
+				.reader(multiResourceItemReader())
+				.writer(csvWriter())
+				.build();
+	}
 }
