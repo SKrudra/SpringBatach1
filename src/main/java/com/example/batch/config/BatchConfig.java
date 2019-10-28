@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
@@ -59,7 +60,8 @@ public class BatchConfig {
 		return stepBuilderFactory.get("stepTwo").tasklet(new MyTaskTwo()).build();
 	}
 
-	@Bean
+	@Primary
+	@Bean(name = "demoJob")
 	public Job demoJob() {
 		return jobBuilderFactory.get("demoJob").incrementer(new RunIdIncrementer()).start(stepOne()).next(stepTwo())
 				.build();
@@ -95,7 +97,7 @@ public class BatchConfig {
 	// end::readerwriterprocessor[]
 
 	// tag::jobstep[]
-	@Bean
+	@Bean(name= "importUserJob")
 	public Job importUserJob(JobCompletionNotificationListener listener, Step step1) {
 		return jobBuilderFactory.get("importUserJob").incrementer(new RunIdIncrementer()).listener(listener).flow(step1)
 				.end().build();
@@ -146,7 +148,7 @@ public class BatchConfig {
 				}).build();
 	}
 
-	@Bean
+	@Bean(name = "multiInputReaderJob")
 	public Job multiInputReaderJob() {
 		return jobBuilderFactory.get("multiInputReaderJob").incrementer(new RunIdIncrementer())
 				.flow(multiInputReaderStep()).end().build();
