@@ -1,6 +1,5 @@
 package com.example.batch;
 
-import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
@@ -10,6 +9,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
+import com.example.batch.config.DemoBatchConfig;
+import com.example.batch.config.FileToDBBatchConfig;
+import com.example.batch.config.MultiResourceReaderConfig;
+
 @EnableScheduling
 @SpringBootApplication
 public class BatchApplication {
@@ -18,7 +21,13 @@ public class BatchApplication {
 	JobLauncher jobLauncher;
 
 	@Autowired
-	Job job;
+	DemoBatchConfig demoBatchConfig;
+
+	@Autowired
+	FileToDBBatchConfig fileToDBBatchConfig;
+
+	@Autowired
+	MultiResourceReaderConfig multiResourceReaderConfig;
 
 	public static void main(String[] args) {
 		SpringApplication.run(BatchApplication.class, args);
@@ -28,6 +37,21 @@ public class BatchApplication {
 	public void schedule() throws Exception {
 		JobParameters params = new JobParametersBuilder().addString("JobId", String.valueOf(System.currentTimeMillis()))
 				.toJobParameters();
-		jobLauncher.run(job, params);
+		jobLauncher.run(demoBatchConfig.demoJob(), params);
+
+	}
+
+	@Scheduled(cron = "0 */2 * * * ?")
+	public void secondSchedule() throws Exception {
+		JobParameters params = new JobParametersBuilder().addString("JobId", String.valueOf(System.currentTimeMillis()))
+				.toJobParameters();
+		jobLauncher.run(fileToDBBatchConfig.importUserJob(), params);
+	}
+
+	@Scheduled(cron = "0 */3 * * * ?")
+	public void thirdSchedule() throws Exception {
+		JobParameters params = new JobParametersBuilder().addString("JobId", String.valueOf(System.currentTimeMillis()))
+				.toJobParameters();
+		jobLauncher.run(multiResourceReaderConfig.multiInputReaderJob(), params);
 	}
 }
