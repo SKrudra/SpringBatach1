@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import com.example.batch.config.DemoBatchConfig;
 import com.example.batch.config.FileToDBBatchConfig;
 import com.example.batch.config.MultiResourceReaderConfig;
+import com.example.batch.config.PartitionerConfig;
 
 @EnableScheduling
 @SpringBootApplication
@@ -28,6 +29,9 @@ public class BatchApplication {
 
 	@Autowired
 	MultiResourceReaderConfig multiResourceReaderConfig;
+
+	@Autowired
+	PartitionerConfig partitionerConfig;
 
 	public static void main(String[] args) {
 		SpringApplication.run(BatchApplication.class, args);
@@ -53,5 +57,12 @@ public class BatchApplication {
 		JobParameters params = new JobParametersBuilder().addString("JobId", String.valueOf(System.currentTimeMillis()))
 				.toJobParameters();
 		jobLauncher.run(multiResourceReaderConfig.multiInputReaderJob(), params);
+	}
+
+	@Scheduled(cron = "0 */1 * * * ?")
+	public void partitionerJobSchedule() throws Exception {
+		JobParameters params = new JobParametersBuilder().addString("JobId", String.valueOf(System.currentTimeMillis()))
+				.toJobParameters();
+		jobLauncher.run(partitionerConfig.partitionerJob(), params);
 	}
 }
