@@ -18,7 +18,6 @@ import com.example.batch.tasks.MyTaskTwo;
  * 
  */
 @Configuration
-@EnableBatchProcessing
 public class DemoBatchConfig {
 
 	@Autowired
